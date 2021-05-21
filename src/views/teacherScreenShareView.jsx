@@ -91,10 +91,12 @@ export const TeacherScreenShareView = ({ isChatOpen, toggleChat }) => {
   const { streamsWithInfo, screenStream, cameraStream } = getStreamsInfo({
     peers,
   });
-  let showCameraStream = cameraStream.role === "Student";
+  let showCameraStream =
+    (!peers.some(isTeacher) && cameraStream.role === "Teacher") ||
+    cameraStream.role === "Student";
   if (!showCameraStream) streamsWithInfo.unshift(cameraStream);
 
-  if (cameraStream.peer.id === getLocalPeerID(peers)) {
+  if (cameraStream.peer.id === getLocalPeerID(peers) && !peers.some(isTeacher)) {
     showCameraStream = false;
     streamsWithInfo.push(cameraStream);
   }
