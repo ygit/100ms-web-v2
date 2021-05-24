@@ -6,23 +6,25 @@ import React, { useContext } from "react";
 import { AppContext } from "../store/AppContext";
 import {ROLES} from "../common/roles";
 import {GridCenterView, GridSidePaneView} from "./components/gridView";
+import {ChatView} from './components/chatView'
 
-export const StudentGridView = ({ isChatOpen, toggleChat }) => {
+export const GridView = ({ isChatOpen, toggleChat }) => {
     const { maxTileCount } = useContext(AppContext);
     const peers = useHMSStore(selectPeers);
     const teacherPeers = peers.filter(peer => peer.role === ROLES.TEACHER);
     const studentPeers = peers.filter(peer => peer.role === ROLES.STUDENT);
     return <React.Fragment>
         <GridCenterView
-            peers={teacherPeers}
-            maxTileCount={2}
+            peers={peers}
+            maxTileCount={8}
             allowRemoteMute={false}
         ></GridCenterView>
-        <GridSidePaneView
-            peers={studentPeers}
-            maxTileCount={maxTileCount}
-            isChatOpen={isChatOpen}
-            toggleChat={toggleChat}
-        ></GridSidePaneView>
+    {isChatOpen && (
+            <div className="flex absolute h-3/4 items-end p-2">
+                <div className="w-full h-full">
+                    <ChatView toggleChat={toggleChat}></ChatView>
+                </div>
+            </div>
+        )}
     </React.Fragment>
 }

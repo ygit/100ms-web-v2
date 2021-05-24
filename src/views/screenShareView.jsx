@@ -17,10 +17,8 @@ export const ScreenShareView = ({ isChatOpen, toggleChat }) => {
   const smallTilePeers = useMemo(() => peers.filter(peer => peer.id !== peerPresenting.id),
         [peers, peerPresenting]);
 
-  const amITeacher = localPeer.role === ROLES.TEACHER;
-  const isPresenterTeacher = peerPresenting.role === ROLES.TEACHER;
   const amIPresenting = localPeer.id === peerPresenting.id;
-  const showPresenterInSmallTile = amIPresenting || (amITeacher && isPresenterTeacher);
+  const showPresenterInSmallTile = amIPresenting;
 
   if (showPresenterInSmallTile) {
       if (amIPresenting) { // put presenter on last page
