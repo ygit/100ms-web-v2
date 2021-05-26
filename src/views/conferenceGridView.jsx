@@ -1,7 +1,4 @@
-import {
-    selectPeers,
-    useHMSStore,
-} from "@100mslive/sdk-components";
+import { selectPeers, useHMSStore } from "@100mslive/hms-video-react";
 import React, { useContext } from "react";
 import { AppContext } from "../store/AppContext";
 import {ROLES} from "../common/roles";
@@ -11,8 +8,6 @@ import {ChatView} from './components/chatView'
 export const GridView = ({ isChatOpen, toggleChat }) => {
     const { maxTileCount } = useContext(AppContext);
     const peers = useHMSStore(selectPeers);
-    const teacherPeers = peers.filter(peer => peer.role === ROLES.TEACHER);
-    const studentPeers = peers.filter(peer => peer.role === ROLES.STUDENT);
     return <React.Fragment>
         <GridCenterView
             peers={peers}
@@ -27,4 +22,4 @@ export const GridView = ({ isChatOpen, toggleChat }) => {
             </div>
         )}
     </React.Fragment>
-}
+};

@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { useHMSActions, useHMSStore } from "@100mslive/sdk-components";
-import { selectLocalPeer, selectIsConnectedToRoom } from "@100mslive/sdk-components";
-import {convertLoginInfoToJoinConfig, setUpLogRocket} from "./appContextUtils";
+import React, { useState, useEffect, useCallback } from "react";
+import { useHMSActions, useHMSStore } from "@100mslive/hms-video-react";
+import {
+  selectLocalPeer,
+  selectIsConnectedToRoom
+} from "@100mslive/hms-video-react";
+import {
+  convertLoginInfoToJoinConfig,
+  setUpLogRocket
+} from "./appContextUtils";
 
 const AppContext = React.createContext(null);
 
@@ -10,14 +16,14 @@ const initialLoginInfo = {
   username: "",
   role: "",
   roomId: "",
-  endpoint:process.env.REACT_APP_INIT_ENDPOINT,
-  env:process.env.REACT_APP_ENV,
+  endpoint: process.env.REACT_APP_INIT_ENDPOINT,
+  env: process.env.REACT_APP_ENV,
   audioMuted: false,
   videoMuted: false,
   selectedVideoInput: "default",
   selectedAudioInput: "default",
-  selectedAudioOutput: "default",
-}
+  selectedAudioOutput: "default"
+};
 
 const AppContextProvider = ({ children }) => {
   const hmsActions = useHMSActions();
@@ -26,13 +32,13 @@ const AppContextProvider = ({ children }) => {
 
   const [state, setState] = useState({
     loginInfo: initialLoginInfo,
-    maxTileCount: 9,
+    maxTileCount: 9
   });
 
-  const customLeave = () => {
+  const customLeave = useCallback(() => {
     console.log("User is leaving the room");
     hmsActions.leave();
-  }
+  }, [hmsActions]);
 
   useEffect(() => {
     if (!state.loginInfo.token) return;
@@ -41,23 +47,25 @@ const AppContextProvider = ({ children }) => {
   }, [state.loginInfo.token]); // to avoid calling join again, call it only when token is changed
 
   useEffect(() => {
-    localPeer && setUpLogRocket(state.loginInfo, localPeer)
+    localPeer && setUpLogRocket(state.loginInfo, localPeer);
     // eslint-disable-next-line
   }, [localPeer?.id]);
 
   // deep set with clone so react re renders on any change
-  const deepSetLoginInfo = (loginInfo) => {
+  const deepSetLoginInfo = loginInfo => {
     const newState = {
       ...state,
-      loginInfo: { ...state.loginInfo, ...loginInfo },
-    }
+      loginInfo: { ...state.loginInfo, ...loginInfo }
+    };
     setState(newState);
     console.log(newState); // note: component won't reflect changes at time of this log
-  }
+  };
 
-  const deepSetMaxTiles = (maxTiles) => {
-    setState((prevState) => ({ ...prevState, maxTileCount: maxTiles }));
-  }
+  const deepSetMaxTiles = maxTiles => {
+    setState(prevState => ({ ...prevState, maxTileCount: maxTiles }));
+  };
+
+  window.onunload = () => customLeave();
 
   return (
     <AppContext.Provider
@@ -67,7 +75,7 @@ const AppContextProvider = ({ children }) => {
         loginInfo: state.loginInfo,
         maxTileCount: state.maxTileCount,
         isConnected: isConnected,
-        leave: customLeave,
+        leave: customLeave
       }}
     >
       {children}

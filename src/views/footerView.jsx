@@ -9,86 +9,108 @@ import {
   useHMSActions,
   selectIsLocalScreenShared,
   selectIsLocalAudioEnabled,
-  selectIsLocalVideoEnabled,
-} from "@100mslive/sdk-components";
-import { useContext } from "react";
+  selectIsLocalVideoDisplayEnabled
+} from "@100mslive/hms-video-react";
+import { useCallback, useContext } from "react";
 import { AppContext } from "../store/AppContext";
-import { useHistory } from "react-router-dom";
-import {Settings} from "@100mslive/sdk-components";
+import { useHistory, useParams } from "react-router-dom";
+import { Settings } from "@100mslive/hms-video-react";
 
 const SettingsView = () => {
-  const {maxTileCount, setMaxTileCount} = useContext(AppContext);
-  console.log(maxTileCount);
-  const onChange = ({maxTileCount:newMaxTileCount}) => {
+  const hmsActions = useHMSActions();
+  const {
+    loginInfo: { selectedAudioInput, selectedVideoInput },
+    setLoginInfo,
+    setMaxTileCount
+  } = useContext(AppContext);
+
+  const onChange = ({
+    maxTileCount: newMaxTileCount,
+    selectedVideoInput: newSelectedVideoInput,
+    selectedAudioInput: newSelectedAudioInput
+  }) => {
     setMaxTileCount(newMaxTileCount);
-  }
+    if (selectedAudioInput !== newSelectedAudioInput) {
+      hmsActions.setAudioSettings({ deviceId: newSelectedAudioInput });
+      setLoginInfo({ selectedAudioInput: newSelectedAudioInput });
+    }
+
+    if (selectedVideoInput !== newSelectedVideoInput) {
+      hmsActions.setVideoSettings({ deviceId: newSelectedVideoInput });
+      setLoginInfo({ selectedVideoInput: newSelectedVideoInput });
+    }
+  };
   return (
     <>
-          <Settings
-          onChange={onChange}
-        />                  
+      <Settings onChange={onChange} />
     </>
-  )
-}
+  );
+};
 
 export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const isScreenShared = useHMSStore(selectIsLocalScreenShared);
   const isLocalAudioEnabled = useHMSStore(selectIsLocalAudioEnabled);
-  const isLocalVideoEnabled = useHMSStore(selectIsLocalVideoEnabled);
+  const isLocalVideoEnabled = useHMSStore(selectIsLocalVideoDisplayEnabled);
   const hmsActions = useHMSActions();
   const { isConnected, leave } = useContext(AppContext);
   const history = useHistory();
+  const params = useParams();
 
-  const toggleScreenShare = () => {
-      hmsActions.setScreenShareEnabled(!isScreenShared);
-  }
+  const toggleScreenShare = useCallback(() => {
+    hmsActions.setScreenShareEnabled(!isScreenShared);
+  }, [hmsActions, isScreenShared]);
 
   return (
     <>
       {isConnected && (
         <ControlBar
           leftComponents={[
-            <SettingsView key={0}/>,
-            <VerticalDivider key={1}/>,
-            <TwButton key={2}
+            <SettingsView key={0} />,
+            <VerticalDivider key={1} />,
+            <TwButton
+              key={2}
               iconOnly
-              variant={'no-fill'}
+              variant={"no-fill"}
               iconSize="md"
-              shape={'rectangle'}
+              shape={"rectangle"}
               onClick={toggleScreenShare}
-              >
-                <ShareScreenIcon/>
+            >
+              <ShareScreenIcon />
             </TwButton>,
-            <VerticalDivider key={3}/>,
+            <VerticalDivider key={3} />,
             <TwButton
               key={4}
               iconOnly
-              variant={'no-fill'}
-              iconSize='md'
-              shape={'rectangle'}
+              variant={"no-fill"}
+              iconSize="md"
+              shape={"rectangle"}
               onClick={toggleChat}
               active={isChatOpen}
-              >
-                <ChatIcon />
-            </TwButton>,
+            >
+              <ChatIcon />
+            </TwButton>
           ]}
           rightComponents={[
             <TwButton
-                key={0}
-                size='md'
-                shape={'rectangle'}
-                variant={'danger'}
-                onClick={() => {
-                  leave();
-                  history.push("/");
-                }}
+              key={0}
+              size="md"
+              shape={"rectangle"}
+              variant={"danger"}
+              onClick={() => {
+                leave();
+                history.push("/leave/" + params.roomId);
+              }}
             >
               <HangUpIcon className="mr-2" />
               Leave room
             </TwButton>
           ]}
-          audioButtonOnClick={() => hmsActions.setLocalAudioEnabled(!isLocalAudioEnabled)}
-          videoButtonOnClick={() => hmsActions.setLocalVideoEnabled(!isLocalVideoEnabled)}
+          audioButtonOnClick={() =>
+            hmsActions.setLocalAudioEnabled(!isLocalAudioEnabled)
+          }
+          videoButtonOnClick={() =>
+            hmsActions.setLocalVideoEnabled(!isLocalVideoEnabled)
+          }
           isAudioMuted={!isLocalAudioEnabled}
           isVideoMuted={!isLocalVideoEnabled}
         />

@@ -1,4 +1,4 @@
-import {selectLocalPeer, selectIsSomeoneScreenSharing, useHMSStore} from "@100mslive/sdk-components";
+import {selectLocalPeer, selectIsSomeoneScreenSharing, useHMSStore} from "@100mslive/hms-video-react";
 import { GridView } from "./conferenceGridView";
 import {ScreenShareView} from "./screenShareView";
 import {ROLES} from "../common/roles";

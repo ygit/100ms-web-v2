@@ -1,52 +1,63 @@
 import {
   useHMSStore,
+  useHMSActions,
   VideoList,
   VideoTile,
   selectPeers,
   selectLocalPeer,
   selectPeerScreenSharing,
-} from "@100mslive/sdk-components";
-import React, {useMemo} from "react";
+  ScreenShareDisplay
+} from "@100mslive/hms-video-react";
+import React, { useCallback, useMemo } from "react";
 import { ChatView } from "./components/chatView";
-import {ROLES} from "../common/roles";
+import { ROLES } from "../common/roles";
 
 export const ScreenShareView = ({ isChatOpen, toggleChat }) => {
   const peers = useHMSStore(selectPeers);
   const localPeer = useHMSStore(selectLocalPeer);
   const peerPresenting = useHMSStore(selectPeerScreenSharing);
-  const smallTilePeers = useMemo(() => peers.filter(peer => peer.id !== peerPresenting.id),
-        [peers, peerPresenting]);
+  const smallTilePeers = useMemo(
+    () => peers.filter(peer => peer.id !== peerPresenting.id),
+    [peers, peerPresenting]
+  );
 
-  const amIPresenting = localPeer.id === peerPresenting.id;
-  const showPresenterInSmallTile = amIPresenting;
+  const amITeacher = localPeer?.role === ROLES.TEACHER;
+  const isPresenterTeacher = peerPresenting?.role === ROLES.TEACHER;
+  const amIPresenting = localPeer && localPeer.id === peerPresenting?.id;
+  const showPresenterInSmallTile =
+    amIPresenting || (amITeacher && isPresenterTeacher);
 
-  if (showPresenterInSmallTile) {
-      if (amIPresenting) { // put presenter on last page
-          smallTilePeers.push(peerPresenting);
-      } else {  // put on first page
-          smallTilePeers.unshift(peerPresenting);
-      }
+  if (
+    showPresenterInSmallTile &&
+    !smallTilePeers.some(peer => peer.id === peerPresenting.id)
+  ) {
+    if (amIPresenting) {
+      // put presenter on last page
+      smallTilePeers.push(peerPresenting);
+    } else {
+      // put on first page
+      smallTilePeers.unshift(peerPresenting);
+    }
   }
 
-  const ScreenShareComponent = () => <div className="w-8/10 h-full">
-    {peerPresenting && (
-        <VideoTile peer={peerPresenting} showScreen={true} objectFit="contain"/>
-    )}
-  </div>
-
-  return <React.Fragment>
-        <div className="w-full h-full flex">
-          <ScreenShareComponent/>
-          <div className="flex flex-wrap overflow-hidden p-2 w-2/10 h-full ">
-            <SidePane
-                isChatOpen={isChatOpen}
-                toggleChat={toggleChat}
-                peerScreenSharing={!showPresenterInSmallTile && peerPresenting}
-                smallTilePeers={smallTilePeers}
-            />
-          </div>
+  return (
+    <React.Fragment>
+      <div className="w-full h-full flex">
+        <ScreenShareComponent
+          amIPresenting={amIPresenting}
+          peerPresenting={peerPresenting}
+        />
+        <div className="flex flex-wrap overflow-hidden p-2 w-2/10 h-full ">
+          <SidePane
+            isChatOpen={isChatOpen}
+            toggleChat={toggleChat}
+            peerScreenSharing={showPresenterInSmallTile ? null : peerPresenting}
+            smallTilePeers={smallTilePeers}
+          />
         </div>
-      </React.Fragment>
+      </div>
+    </React.Fragment>
+  );
 };
 
 // Sidepane will show the camera stream of the main peer who is screensharing
@@ -54,47 +65,99 @@ export const ScreenShareView = ({ isChatOpen, toggleChat }) => {
 export const SidePane = ({
   isChatOpen,
   toggleChat,
-  peerScreenSharing,  // the peer who is screensharing
+  peerScreenSharing, // the peer who is screensharing
   smallTilePeers
 }) => {
-  
-  const LargeTilePeerView = () => <div className="w-full relative overflow-hidden"
-      style={{
-        paddingTop: `${peerScreenSharing ? "100%" : "0"}`,
-      }}>
-    {peerScreenSharing && (
-        <div className="absolute left-0 top-0 w-full h-full p-3">
-          <VideoTile peer={peerScreenSharing}/>
+  // The main peer's screenshare is already being shown in center view
+  const shouldShowScreenFn = useCallback(
+    peer => peerScreenSharing && peer.id !== peerScreenSharing.id,
+    [peerScreenSharing]
+  );
+
+  return (
+    <React.Fragment>
+      <div className={`w-full h-full relative`}>
+        <div className={`w-full flex flex-col h-full`}>
+          <LargeTilePeerView peerScreenSharing={peerScreenSharing} />
+          <SmallTilePeersView
+            isChatOpen={isChatOpen}
+            smallTilePeers={smallTilePeers}
+            shouldShowScreen={shouldShowScreenFn}
+          />
         </div>
-    )}
-  </div>
+        <CustomChatView isChatOpen={isChatOpen} toggleChat={toggleChat} />
+      </div>
+    </React.Fragment>
+  );
+};
 
-  // The main screen is already being shown
-  const shouldShowScreen = (peer) => peer.id !== peerScreenSharing.id;
+const ScreenShareComponent = ({ amIPresenting, peerPresenting }) => {
+  const hmsActions = useHMSActions();
+  return (
+    <div className="w-8/10 h-full">
+      {peerPresenting &&
+        (amIPresenting ? (
+          <div className="object-contain h-full">
+            <ScreenShareDisplay
+              stopScreenShare={() => {
+                hmsActions.setScreenShareEnabled(false);
+              }}
+              classes={{ rootBg: "h-full" }}
+            />
+          </div>
+        ) : (
+          <VideoTile
+            peer={peerPresenting}
+            showScreen={true}
+            objectFit="contain"
+          />
+        ))}
+    </div>
+  );
+};
 
-  const SmallTilePeersView = () => <div className={`w-full relative ${isChatOpen ? "h-1/3" : "flex-grow"}`}>
-    {smallTilePeers && (smallTilePeers.length > 0) && (
-        <VideoList
-            peers={isChatOpen ? [peerScreenSharing, ...smallTilePeers] : smallTilePeers}
-            showScreenFn={shouldShowScreen}
-            classes={{videoTileContainer: "rounded-lg p-2"}}
-            maxColCount={2}
-            overflow="scroll-x"
-        />
-    )}
-  </div>
-
-  const CustomChatView = () => isChatOpen && <div className="h-2/3 w-full absolute z-40 bottom-0 right-0">
+const CustomChatView = ({ isChatOpen, toggleChat }) => {
+  return (
+    isChatOpen && (
+      <div className="h-2/3 w-full absolute z-40 bottom-0 right-0">
         <ChatView toggleChat={toggleChat} />
       </div>
-
-  return <React.Fragment>
-      <div className={`w-full h-full relative`}>
-          <div className={`w-full flex flex-col h-full`}>
-              <LargeTilePeerView/>
-              <SmallTilePeersView/>
-          </div>
-          <CustomChatView/>
-      </div>
-  </React.Fragment>
+    )
+  );
 };
+
+const SmallTilePeersView = ({
+  isChatOpen,
+  smallTilePeers,
+  shouldShowScreenFn
+}) => {
+  return (
+    <div className={`w-full relative ${isChatOpen ? "h-1/3" : "flex-grow"}`}>
+      {smallTilePeers && smallTilePeers.length > 0 && (
+        <VideoList
+          peers={smallTilePeers}
+          showScreenFn={shouldShowScreenFn}
+          classes={{ videoTileContainer: "rounded-lg " }}
+          maxColCount={2}
+          overflow="scroll-x"
+          compact={true}
+        />
+      )}
+    </div>
+  );
+};
+
+const LargeTilePeerView = ({ peerScreenSharing }) => (
+  <div
+    className="w-full relative overflow-hidden"
+    style={{
+      paddingTop: `${peerScreenSharing ? "100%" : "0"}`
+    }}
+  >
+    {peerScreenSharing && (
+      <div className="absolute left-0 top-0 w-full h-full p-3">
+        <VideoTile peer={peerScreenSharing} compact={true} />
+      </div>
+    )}
+  </div>
+);
