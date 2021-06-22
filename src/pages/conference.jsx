@@ -5,10 +5,15 @@ import { ConferenceHeader } from "../views/headerView";
 import { ConferenceFooter } from "../views/footerView";
 import { ConferenceMainView } from "../views/mainView";
 import { Notifications } from "../views/components/notifications";
+import {
+  HMSNotificationTypes,
+  useHMSNotifications,
+} from "@100mslive/hms-video-react";
 
 export const Conference = () => {
   const history = useHistory();
   const { roomId, role } = useParams();
+  const notification = useHMSNotifications();
   const context = useContext(AppContext);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const toggleChat = useCallback(() => {
@@ -32,6 +37,18 @@ export const Conference = () => {
     };
     // eslint-disable-next-line
   }, []);
+
+  useEffect(() => {
+    if (
+      notification &&
+      notification.type === HMSNotificationTypes.ERROR &&
+      Math.floor(notification.data.code / 1000) === 1
+    ) {
+      // Fatal Error: Assuming store will start leave
+      history.push(`/leave/${loginInfo.roomId || roomId || ""}/${role}`);
+    }
+    // eslint-disable-next-line
+  }, [notification]);
 
   return (
     <div className="w-full h-full flex flex-col dark:bg-black">
