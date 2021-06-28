@@ -18,7 +18,7 @@ export const BotMode = () => {
                 username: username,
                 role: role,
                 roomId: roomId,
-                endpoint: init(env),
+                endpoint: "https://qa-init.100ms.live/init",
                 audioMuted: true,
                 videoMuted: true,
                 selectedVideoOutput: 'default',
@@ -39,26 +39,17 @@ export const BotMode = () => {
     );
 };
 
-const tokenEndpoint = {
-    "prod":"https://100ms-services.vercel.app/api/token",
-    "qa":"https://100ms-services.vercel.app/api/token",
-}
 
-const init = (env)=>{
-    return "https://"+env + "-init.100ms.live/init"
-}
-
-
-async function getToken(userId, role, roomId, env) {
-    console.log("in otken",userId, role, roomId, env);
-    console.log("in token",tokenEndpoint[env]);
+async function getToken(userId, role, roomId) {
+    console.log("in otken",userId, role, roomId);
+    console.log("in token","https://qa-in.100ms.live/hmsapi/internal.app.100ms.live/api/token");
     const response = await fetch(
-        tokenEndpoint[env],
+        "https://qa-in.100ms.live/hmsapi/internal.app.100ms.live/api/token",
       {
         method: "POST",
         //TODO remove env
         body: JSON.stringify({
-          env: env + "-in",
+          env: "qa-in",
           role: role,
           room_id: roomId,
           user_id: userId
