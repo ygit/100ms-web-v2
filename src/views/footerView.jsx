@@ -54,6 +54,7 @@ const SettingsView = () => {
 
 export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const [isDetecting, setIsDetecting] = useState(false);
+  const [prevDetecting, setPrevDetecting] = useState(false);;
   const [isDetectionRendering, setIsDetectionRendering] = useState(false);
   const isScreenShared = useHMSStore(selectIsLocalScreenShared);
   const isLocalAudioEnabled = useHMSStore(selectIsLocalAudioEnabled);
@@ -68,6 +69,27 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
     console.log("chekcing states", isDetecting, isDetectionRendering);
     hmsActions.Detection(isDetecting, isDetectionRendering);
   }, [isDetecting, isDetectionRendering]);
+ 
+  useEffect(() => {
+    if (isLocalVideoEnabled === false) {
+      if (isDetecting) {
+        setPrevDetecting(true);
+        setIsDetecting(false);
+        setIsDetectionRendering(false);
+      }
+      else {
+        setPrevDetecting(false);
+      }
+    }
+    else if(isLocalVideoEnabled === true){
+      if (prevDetecting) {
+        console.log("it24");
+        setIsDetecting(true);
+        setIsDetectionRendering(true);
+      }
+    }
+
+  }, [isLocalVideoEnabled]);
 
   const initialModalProps = {
     show: false,
