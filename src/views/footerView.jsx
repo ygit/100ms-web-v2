@@ -57,6 +57,7 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const isLocalAudioEnabled = useHMSStore(selectIsLocalAudioEnabled);
   const isLocalVideoEnabled = useHMSStore(selectIsLocalVideoDisplayEnabled);
   const countUnreadMessages = useHMSStore(selectUnreadHMSMessagesCount);
+  let prevRendering = false;
   const hmsActions = useHMSActions();
   const { isConnected, leave } = useContext(AppContext);
   const history = useHistory();
@@ -140,6 +141,17 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
         videoButtonOnClick={() =>
           hmsActions.setLocalVideoEnabled(!isLocalVideoEnabled)
         }
+        detectButtonOnClick={() => {
+          console.log("button click", ControlBar.isDetection);
+          prevRendering = ControlBar.isDetection;
+          ControlBar.isDetection = !(ControlBar.isDetection);
+          hmsActions.Detection(ControlBar.isDetection, ControlBar.isDetection);
+        }}
+        detectRenderingButtonOnClick={() => {
+          hmsActions.Detection(ControlBar.isDetection, prevRendering);
+          prevRendering = !prevRendering;
+        }}
+        isRendering={!prevRendering}
         isAudioMuted={!isLocalAudioEnabled}
         isVideoMuted={!isLocalVideoEnabled}
       />
