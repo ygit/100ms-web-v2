@@ -83,7 +83,6 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
     }
     else if(isLocalVideoEnabled === true){
       if (prevDetecting) {
-        console.log("it24");
         setIsDetecting(true);
         setIsDetectionRendering(true);
       }
