@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext } from "react";
+import React, { useState, useCallback, useContext, useEffect } from "react";
 import {
   useHMSStore,
   ControlBar,
@@ -53,15 +53,22 @@ const SettingsView = () => {
 };
 
 export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [isDetectionRendering, setIsDetectionRendering] = useState(false);
   const isScreenShared = useHMSStore(selectIsLocalScreenShared);
   const isLocalAudioEnabled = useHMSStore(selectIsLocalAudioEnabled);
   const isLocalVideoEnabled = useHMSStore(selectIsLocalVideoDisplayEnabled);
   const countUnreadMessages = useHMSStore(selectUnreadHMSMessagesCount);
-  let prevRendering = false;
   const hmsActions = useHMSActions();
   const { isConnected, leave } = useContext(AppContext);
   const history = useHistory();
   const params = useParams();
+
+  useEffect(() => {
+    if (isDetecting) {
+      hmsActions.Detection(isDetecting, isDetectionRendering);
+    }
+  }, [isDetecting, isDetectionRendering]);
 
   const initialModalProps = {
     show: false,
@@ -154,16 +161,13 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
         audioButtonOnClick={toggleAudio}
         videoButtonOnClick={toggleVideo}
         detectButtonOnClick={() => {
-          console.log("button click", ControlBar.isDetection);
-          prevRendering = ControlBar.isDetection;
-          ControlBar.isDetection = !(ControlBar.isDetection);
-          hmsActions.Detection(ControlBar.isDetection, ControlBar.isDetection);
+          setIsDetecting(!isDetecting);
         }}
         detectRenderingButtonOnClick={() => {
-          hmsActions.Detection(ControlBar.isDetection, prevRendering);
-          prevRendering = !prevRendering;
+          setIsDetectionRendering(!isDetectionRendering);
         }}
-        isRendering={!prevRendering}
+        isDetecting={isDetecting}
+        isRendering={isDetectionRendering}
         isAudioMuted={!isLocalAudioEnabled}
         isVideoMuted={!isLocalVideoEnabled}
       />
