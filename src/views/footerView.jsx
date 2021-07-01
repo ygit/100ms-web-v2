@@ -65,9 +65,8 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const params = useParams();
 
   useEffect(() => {
-    if (isDetecting) {
-      hmsActions.Detection(isDetecting, isDetectionRendering);
-    }
+    console.log("chekcing states", isDetecting, isDetectionRendering);
+    hmsActions.Detection(isDetecting, isDetectionRendering);
   }, [isDetecting, isDetectionRendering]);
 
   const initialModalProps = {
@@ -162,9 +161,12 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
         videoButtonOnClick={toggleVideo}
         detectButtonOnClick={() => {
           setIsDetecting(!isDetecting);
+          setIsDetectionRendering(!isDetecting);
         }}
         detectRenderingButtonOnClick={() => {
-          setIsDetectionRendering(!isDetectionRendering);
+          if (isDetecting) {
+            setIsDetectionRendering(!isDetectionRendering);
+          }
         }}
         isDetecting={isDetecting}
         isRendering={isDetectionRendering}
