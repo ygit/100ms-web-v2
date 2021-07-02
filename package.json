@@ -19,6 +19,9 @@
     "react-scripts": "4.0.3",
     "web-vitals": "^1.0.1"
   },
+   "resolutions": {
+    "**/@100mslive/hms-faceapi": "0.4.49"
+  },
 
   "scripts": {
     "start:build": "http-server build",
