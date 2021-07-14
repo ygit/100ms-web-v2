@@ -32,6 +32,7 @@ const SettingsView = () => {
     maxTileCount: newMaxTileCount,
     selectedVideoInput: newSelectedVideoInput,
     selectedAudioInput: newSelectedAudioInput,
+    selectedAudioOutput,
   }) => {
     setMaxTileCount(newMaxTileCount);
     if (audioInputDeviceId !== newSelectedAudioInput) {
@@ -41,6 +42,8 @@ const SettingsView = () => {
     if (videoInputDeviceId !== newSelectedVideoInput) {
       hmsActions.setVideoSettings({ deviceId: newSelectedVideoInput });
     }
+
+    hmsActions.setOutputDevice(selectedAudioOutput);
   };
   return (
     <>
