@@ -5,6 +5,7 @@ import {
   MessageModal,
   Preview,
   ProgressIcon,
+  useHMSActions,
 } from "@100mslive/hms-video-react";
 import { AppContext } from "../store/AppContext";
 import getToken from "../services/tokenService";
@@ -14,6 +15,7 @@ import { useEffect } from "react";
 import { Notifications } from "../views/components/notifications";
 
 const PreviewScreen = () => {
+  const hmsActions = useHMSActions();
   const history = useHistory();
   const context = useContext(AppContext);
   const { loginInfo, setLoginInfo, setMaxTileCount, tokenEndpoint } = context;
@@ -64,20 +66,21 @@ const PreviewScreen = () => {
         });
       });
   };
+
   const onChange = ({
     selectedVideoInput,
     selectedAudioInput,
     selectedAudioOutput,
     maxTileCount,
   }) => {
-    console.debug("app: Selected Video Input", selectedVideoInput);
-    console.debug("app: Selected Audio Input", selectedVideoInput);
-    console.debug("app: Selected Audio Output", selectedAudioOutput);
-    setLoginInfo({
+    console.log({
       selectedVideoInput,
       selectedAudioInput,
       selectedAudioOutput,
     });
+    hmsActions.setAudioSettings({ deviceId: selectedAudioInput });
+    hmsActions.setVideoSettings({ deviceId: selectedVideoInput });
+    hmsActions.setOutputDevice(selectedAudioOutput);
     setMaxTileCount(maxTileCount);
   };
 

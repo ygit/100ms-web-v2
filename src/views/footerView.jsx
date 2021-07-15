@@ -29,20 +29,14 @@ const SettingsView = () => {
   );
 
   const onChange = ({
-    maxTileCount: newMaxTileCount,
-    selectedVideoInput: newSelectedVideoInput,
-    selectedAudioInput: newSelectedAudioInput,
+    maxTileCount,
+    selectedVideoInput,
+    selectedAudioInput,
     selectedAudioOutput,
   }) => {
-    setMaxTileCount(newMaxTileCount);
-    if (audioInputDeviceId !== newSelectedAudioInput) {
-      hmsActions.setAudioSettings({ deviceId: newSelectedAudioInput });
-    }
-
-    if (videoInputDeviceId !== newSelectedVideoInput) {
-      hmsActions.setVideoSettings({ deviceId: newSelectedVideoInput });
-    }
-
+    setMaxTileCount(maxTileCount);
+    hmsActions.setAudioSettings({ deviceId: selectedAudioInput });
+    hmsActions.setVideoSettings({ deviceId: selectedVideoInput });
     hmsActions.setOutputDevice(selectedAudioOutput);
   };
   return (
