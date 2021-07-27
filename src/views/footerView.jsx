@@ -1,8 +1,19 @@
-import React, { useState, useCallback, useContext } from "react";
+import React, {
+  useState,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import {
   useHMSStore,
   ControlBar,
   HangUpIcon,
+  MicOffIcon,
+  MicOnIcon,
+  CamOffIcon,
+  CamOnIcon,
+  VirtualBackgroundIcon,
   Button,
   ShareScreenIcon,
   ChatIcon,
@@ -16,22 +27,27 @@ import {
   selectIsLocalVideoDisplayEnabled,
   selectUnreadHMSMessagesCount,
   selectLocalMediaSettings,
+  isMobileDevice,
 } from "@100mslive/hms-video-react";
 import { useHistory, useParams } from "react-router-dom";
+import { HMSVirtualBackgroundPlugin } from "@100mslive/hms-virtual-background";
+import { HMSParticipationMetricsPlugin } from "@100mslive/hms-faceapi";
 import { AppContext } from "../store/AppContext";
-import { isMobileDevice } from "../common/utils";
 
 const SettingsView = () => {
   const hmsActions = useHMSActions();
   const { setMaxTileCount } = useContext(AppContext);
-  const { audioInputDeviceId, videoInputDeviceId } = useHMSStore(
-    selectLocalMediaSettings
-  );
+  const {
+    audioInputDeviceId,
+    videoInputDeviceId,
+    audioOutputDeviceId,
+  } = useHMSStore(selectLocalMediaSettings);
 
   const onChange = ({
     maxTileCount: newMaxTileCount,
     selectedVideoInput: newSelectedVideoInput,
     selectedAudioInput: newSelectedAudioInput,
+    selectedAudioOutput: newSelectedAudioOuput,
   }) => {
     setMaxTileCount(newMaxTileCount);
     if (audioInputDeviceId !== newSelectedAudioInput) {
@@ -41,11 +57,19 @@ const SettingsView = () => {
     if (videoInputDeviceId !== newSelectedVideoInput) {
       hmsActions.setVideoSettings({ deviceId: newSelectedVideoInput });
     }
+
+    if (audioOutputDeviceId !== newSelectedAudioOuput) {
+      hmsActions.setAudioOutputDevice(newSelectedAudioOuput);
+    }
   };
   return (
     <>
       <Settings
         onChange={onChange}
+        initialValues={{
+          selectedAudioInput: audioInputDeviceId,
+          selectedVideoInput: videoInputDeviceId,
+        }}
         classes={{ sliderContainer: "hidden md:block", root: "mr-2 md:mr-0" }}
       />
     </>
@@ -59,8 +83,12 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const countUnreadMessages = useHMSStore(selectUnreadHMSMessagesCount);
   const hmsActions = useHMSActions();
   const { isConnected, leave } = useContext(AppContext);
+  const [showBackground, setShowBackground] = useState(false);
+  const [showDetection, setShowDetection] = useState(false);
   const history = useHistory();
   const params = useParams();
+  const pluginRef = useRef(null);
+  const plugin2Ref = useRef(null);
 
   const initialModalProps = {
     show: false,
@@ -68,6 +96,46 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
     body: "",
   };
   const [errorModal, setErrorModal] = useState(initialModalProps);
+
+  useEffect(() => {
+    async function startPlugin() {
+      if (!pluginRef.current) {
+        pluginRef.current = new HMSVirtualBackgroundPlugin('blur');
+      }
+      await hmsActions.addPluginToVideoTrack(pluginRef.current);
+    }
+    async function removePlugin() {
+      if (pluginRef.current) {
+        await hmsActions.removePluginFromVideoTrack(pluginRef.current);
+      }
+    }
+    if (showBackground) {
+      startPlugin();
+    } else {
+      removePlugin();
+    }
+  }, [showBackground]); //eslint-disable-line
+
+
+   useEffect(() => {
+    async function startPlugin() {
+      if (!plugin2Ref.current) {
+        plugin2Ref.current = new HMSParticipationMetricsPlugin(true,false,0.1,true,true);
+    }
+      await hmsActions.addPluginToVideoTrack(plugin2Ref.current);
+    }
+    async function removePlugin() {
+     if (plugin2Ref.current) {
+        await hmsActions.removePluginFromVideoTrack(plugin2Ref.current);
+     }
+    }
+    if (showDetection) {
+      startPlugin();
+    } else {
+      removePlugin();
+    }
+  }, [showDetection]); //eslint-disable-line
+
 
   const toggleAudio = useCallback(async () => {
     try {
@@ -135,6 +203,52 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
     <>
       <ControlBar
         leftComponents={leftComponents}
+        centerComponents={[
+          <Button
+            iconOnly
+            variant="no-fill"
+            iconSize="md"
+            classes={{ root: "mr-2" }}
+            shape="rectangle"
+            active={!isLocalAudioEnabled}
+            onClick={toggleAudio}
+            key={0}
+          >
+            {!isLocalAudioEnabled ? <MicOffIcon /> : <MicOnIcon />}
+          </Button>,
+          <Button
+            iconOnly
+            variant="no-fill"
+            iconSize="md"
+            classes={{ root: "mr-2" }}
+            shape="rectangle"
+            active={!isLocalVideoEnabled}
+            onClick={toggleVideo}
+            key={1}
+          >
+            {!isLocalVideoEnabled ? <CamOffIcon /> : <CamOnIcon />}
+          </Button>,
+          <Button
+            iconOnly
+            variant="no-fill"
+            shape="rectangle"
+            active={showBackground}
+            onClick={() => setShowBackground(!showBackground)}
+            key={2}
+          >
+            <VirtualBackgroundIcon />
+          </Button>,
+           <Button
+            iconOnly
+            variant="no-fill"
+            shape="rectangle"
+            active={showDetection}
+            onClick={() => setShowDetection(!showDetection)}
+            key={3}
+          >
+            <VirtualBackgroundIcon />
+          </Button>
+        ]}
         rightComponents={[
           <Button
             key={0}
@@ -143,7 +257,9 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
             variant="danger"
             onClick={() => {
               leave();
-              history.push("/leave/" + params.roomId + "/" + params.role);
+              if (params.role)
+                history.push("/leave/" + params.roomId + "/" + params.role);
+              else history.push("/leave/" + params.roomId);
             }}
           >
             <HangUpIcon className="mr-2" />
@@ -152,8 +268,11 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
         ]}
         audioButtonOnClick={toggleAudio}
         videoButtonOnClick={toggleVideo}
+        backgroundButtonOnClick={() => setShowBackground(!showBackground)}
         isAudioMuted={!isLocalAudioEnabled}
         isVideoMuted={!isLocalVideoEnabled}
+        isBackgroundEnabled={showBackground}
+        isDetectionEnabled = {showDetection}
       />
       <MessageModal
         {...errorModal}

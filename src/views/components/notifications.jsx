@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+
 import {
   useHMSNotifications,
   HMSNotificationTypes,
@@ -9,8 +10,8 @@ import {
   ConnectivityIcon,
   PersonIcon,
   Button,
+  isMobileDevice,
 } from "@100mslive/hms-video-react";
-import { isMobileDevice } from "../../common/utils";
 
 export function Notifications() {
   const notification = useHMSNotifications();
@@ -41,7 +42,7 @@ export function Notifications() {
         hmsToast(`New message from ${notification.data?.senderName}`);
         break;
       case HMSNotificationTypes.TRACK_ADDED:
-        console.log("[Track Added]", notification);
+        console.log("[Track Added] data", notification.data);
         break;
       case HMSNotificationTypes.TRACK_REMOVED:
         console.log("[Track Removed]", notification);
