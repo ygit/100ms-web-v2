@@ -28,6 +28,8 @@ import { useHistory, useParams } from "react-router-dom";
 import { HMSVirtualBackgroundPlugin } from "@100mslive/hms-virtual-background";
 import { getRandomVirtualBackground } from "../common/utils";
 import { AppContext } from "../store/AppContext";
+import { selectLocalPeer } from '@100mslive/hms-video-react';
+let amIStudent = false;
 
 const SettingsView = () => {
   const { setMaxTileCount, maxTileCount } = useContext(AppContext);
