@@ -13,11 +13,12 @@ export const MainGridView = ({
   const { maxTileCount } = useContext(AppContext);
   const peers = useHMSStore(selectPeers);
   const teacherPeers = peers.filter(
-    peer => peer.role.toLowerCase() === ROLES.TEACHER
+    peer => peer.roleName.toLowerCase() === ROLES.TEACHER
   );
   const studentPeers = peers.filter(
-    peer => peer.role.toLowerCase() !== ROLES.TEACHER
+    peer => peer.roleName.toLowerCase() !== ROLES.TEACHER
   );
+
   const hideSidePane =
     (teacherPeers.length > 1 && studentPeers.length === 0) ||
     (teacherPeers.length === 0 && studentPeers.length > 1);
@@ -26,6 +27,7 @@ export const MainGridView = ({
   const sidebarPeers = role === ROLES.TEACHER ? teacherPeers : studentPeers;
 
   return (
+   
     <React.Fragment>
       <GridCenterView
         peers={hideSidePane ? peers : centerPeers}
