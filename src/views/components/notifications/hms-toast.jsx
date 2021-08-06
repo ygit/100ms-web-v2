@@ -32,7 +32,11 @@ export const hmsToast = (message, options) => {
     ? transitionMapping[options?.transitionType]
     : options?.toastProps?.transition || Bounce;
 
+<<<<<<< HEAD
   toast(
+=======
+  const id = toast(
+>>>>>>> 33469ae66199ec6ea89bc57a32159037397981b4
     <Toast
       left={options?.left || <Text variant="body">{message}</Text>}
       center={options?.center}
@@ -43,6 +47,10 @@ export const hmsToast = (message, options) => {
       transition,
     }
   );
+<<<<<<< HEAD
+=======
+  return { id, clearToast: () => toast.dismiss(id) };
+>>>>>>> 33469ae66199ec6ea89bc57a32159037397981b4
 };
 
 export const HMSToastContainer = props => {

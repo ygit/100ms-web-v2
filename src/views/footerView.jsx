@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, useCallback, useContext, useRef } from "react";
 import {
   useHMSStore,
   ControlBar,
@@ -26,48 +20,26 @@ import {
   selectIsLocalAudioEnabled,
   selectIsLocalVideoDisplayEnabled,
   selectUnreadHMSMessagesCount,
-  selectLocalMediaSettings,
   isMobileDevice,
   selectIsAllowedToPublish,
+  selectIsLocalVideoPluginPresent,
 } from "@100mslive/hms-video-react";
 import { useHistory, useParams } from "react-router-dom";
 import { HMSVirtualBackgroundPlugin } from "@100mslive/hms-virtual-background";
+import { getRandomVirtualBackground } from "../common/utils";
 import { AppContext } from "../store/AppContext";
-import {
-  selectLocalPeer
-} from "@100mslive/hms-video-react";
-
-var amIStudent = false;
 
 const SettingsView = () => {
-  const hmsActions = useHMSActions();
-  const { setMaxTileCount } = useContext(AppContext);
-  const { audioInputDeviceId, videoInputDeviceId, audioOutputDeviceId } =
-    useHMSStore(selectLocalMediaSettings);
+  const { setMaxTileCount, maxTileCount } = useContext(AppContext);
 
-  const onChange = ({
-    maxTileCount: newMaxTileCount,
-    selectedVideoInput: newSelectedVideoInput,
-    selectedAudioInput: newSelectedAudioInput,
-    selectedAudioOutput: newSelectedAudioOuput,
-  }) => {
-    setMaxTileCount(newMaxTileCount);
-    if (audioInputDeviceId !== newSelectedAudioInput) {
-      hmsActions.setAudioSettings({ deviceId: newSelectedAudioInput });
-    }
-
-    if (videoInputDeviceId !== newSelectedVideoInput) {
-      hmsActions.setVideoSettings({ deviceId: newSelectedVideoInput });
-    }
-
-    if (audioOutputDeviceId !== newSelectedAudioOuput) {
-      hmsActions.setAudioOutputDevice(newSelectedAudioOuput);
-    }
+  const onChange = count => {
+    setMaxTileCount(count);
   };
   return (
     <>
       <Settings
-        onChange={onChange}
+        onTileCountChange={onChange}
+        maxTileCount={maxTileCount}
         classes={{ sliderContainer: "hidden md:block", root: "mr-2 md:mr-0" }}
       />
     </>
@@ -79,6 +51,9 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   const isLocalAudioEnabled = useHMSStore(selectIsLocalAudioEnabled);
   const isLocalVideoEnabled = useHMSStore(selectIsLocalVideoDisplayEnabled);
   const countUnreadMessages = useHMSStore(selectUnreadHMSMessagesCount);
+  const isVBPresent = useHMSStore(
+    selectIsLocalVideoPluginPresent("@100mslive/hms-virtual-background")
+  );
   const hmsActions = useHMSActions();
   const { isConnected, leave } = useContext(AppContext);
   const [showBackground, setShowBackground] = useState(false);
@@ -90,6 +65,7 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   if (localPeer) {
     amIStudent = localPeer.roleName === "student" ? true : false;
   }
+
   const initialModalProps = {
     show: false,
     title: "",
@@ -97,24 +73,24 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
   };
   const [errorModal, setErrorModal] = useState(initialModalProps);
 
-  useEffect(() => {
-    async function startPlugin() {
-      if (!pluginRef.current) {
-        pluginRef.current = new HMSVirtualBackgroundPlugin("blur");
-      }
-      await hmsActions.addPluginToVideoTrack(pluginRef.current);
+  async function startPlugin() {
+    if (!pluginRef.current) {
+      pluginRef.current = new HMSVirtualBackgroundPlugin("none");
     }
-    async function removePlugin() {
-      if (pluginRef.current) {
-        await hmsActions.removePluginFromVideoTrack(pluginRef.current);
-      }
+    await pluginRef.current.setBackground(getRandomVirtualBackground());
+    await hmsActions.addPluginToVideoTrack(pluginRef.current);
+  }
+
+  async function removePlugin() {
+    if (pluginRef.current) {
+      await hmsActions.removePluginFromVideoTrack(pluginRef.current);
+      pluginRef.current = null;
     }
-    if (showBackground) {
-      startPlugin();
-    } else {
-      removePlugin();
-    }
-  }, [showBackground]); //eslint-disable-line
+  }
+
+  function handleVirtualBackground() {
+    isVBPresent ? removePlugin() : startPlugin();
+  }
 
   const toggleAudio = useCallback(async () => {
     try {
@@ -215,13 +191,12 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
             </Button>
           ) : null,
           isAllowedToPublish.video ? (
-            //console.log();
             <Button
               iconOnly
               variant="no-fill"
               shape="rectangle"
-              active={showBackground}
-              onClick={() => setShowBackground(!showBackground)}
+              active={isVBPresent}
+              onClick={handleVirtualBackground}
               key={2}
             >
               <VirtualBackgroundIcon />
@@ -247,10 +222,10 @@ export const ConferenceFooter = ({ isChatOpen, toggleChat }) => {
         ]}
         audioButtonOnClick={toggleAudio}
         videoButtonOnClick={toggleVideo}
-        backgroundButtonOnClick={() => setShowBackground(!showBackground)}
+        backgroundButtonOnClick={handleVirtualBackground}
         isAudioMuted={!isLocalAudioEnabled}
         isVideoMuted={!isLocalVideoEnabled}
-        isBackgroundEnabled={showBackground}
+        isBackgroundEnabled={isVBPresent}
       />
       <MessageModal
         {...errorModal}
